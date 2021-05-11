@@ -8,3 +8,5 @@ target/
 *.class
 *.war
 *.jar
+
+.DS_Store
