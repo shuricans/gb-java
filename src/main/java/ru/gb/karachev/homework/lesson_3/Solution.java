@@ -62,12 +62,8 @@ public class Solution {
         int[][] matrix = new int[size][size];
 
         for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                if(i == j) {
-                    matrix[i][j] = 1;
-                    matrix[size - (i + 1)][j] = 1;
-                }
-            }
+            matrix[i][i] = 1;
+            matrix[i][size - (i + 1)] = 1;
         }
 
         solution.printMatrix(matrix);
