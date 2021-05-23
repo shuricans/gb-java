@@ -4,6 +4,11 @@ import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.diogonunes.jcolor.*;
+
+import static com.diogonunes.jcolor.Ansi.colorize;
+import static com.diogonunes.jcolor.Attribute.*;
+
 /**
  * 2048 (4 x 4)
  * https://play2048.co/
@@ -28,69 +33,78 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Game {
 
-    private static final String ANSI_RESET = "\u001B[0m";
-    private static final String ANSI_BLACK = "\u001B[30m";
-    private static final String ANSI_RED = "\u001B[31m";
-    private static final String ANSI_GREEN = "\u001B[32m";
-    private static final String ANSI_YELLOW = "\u001B[33m";
-    private static final String ANSI_BLUE = "\u001B[34m";
-    private static final String ANSI_PURPLE = "\u001B[35m";
-    private static final String ANSI_CYAN = "\u001B[36m";
-    private static final String ANSI_WHITE = "\u001B[37m";
+    private static final Attribute[] FIRST_FORMAT =
+            new Attribute[]{BLACK_TEXT(), BACK_COLOR(205, 193, 180), BOLD()};
+    private static final Attribute[] SECOND_FORMAT =
+            new Attribute[]{BLACK_TEXT(), BACK_COLOR(187, 173, 160), BOLD()};
+
+    private static final AnsiFormat INFO_FORMAT = new AnsiFormat(CYAN_TEXT());
+    private static final AnsiFormat ERROR_FORMAT = new AnsiFormat(RED_TEXT());
+    private static final AnsiFormat WIN_FORMAT = new AnsiFormat(GREEN_TEXT());
 
     private static final Scanner SCANNER = new Scanner(System.in);
     private static final int SIZE = 4;
-    private static final int WIN_SCORE = 2048;
+    private static final int WIN_TILE = 2048;
 
     private static final int EMPTY = 0;
 
     public static void main(String[] args) {
-
-//        final boolean isGameOver = play();
-//        if(isGameOver) {
-//            System.out.println("game over...");
-//        }
-
-//        int[][] arr = {
-//                {0, 4, 8, 4},
-//                {4, 2, 16, 32},
-//                {32, 128, 64, 2},
-//                {4, 2, 8, 16}
-//        };
-//
-        int[] a = {2, 2, 2, 8};
-
-
-        Direction direction = Direction.LEFT;
-        System.out.println(Arrays.toString(a));
-        calculate(a, direction);
-        System.out.println(Arrays.toString(a));
-
+        play();
     }
 
-    public static boolean play() {
+    public static void play() {
 
-        int[][] freeCells = new int[2][SIZE * SIZE]; // storage for empty cells
-        int[] line = new int[SIZE];
-        int[][] field = generateField(SIZE, freeCells);
+        final int[][] freeCells = new int[2][SIZE * SIZE]; // assist array for calc empty cells
+        final int[][] field = new int[SIZE][SIZE]; // main field, play-board
+        // on start, add two values on field
+        addNewValue(field, freeCells);
+        addNewValue(field, freeCells);
+
+        final int[][] fieldBeforeMove = new int[SIZE][SIZE]; // assist field
+        final int[] line = new int[SIZE]; // assist array
+
         int score = 0;
+        boolean alreadyWin = false;
         Direction direction;
 
-        while (canMove(field)) {
+        System.out.printf(colorize("Join the tiles, get to %d!%n", INFO_FORMAT), WIN_TILE);
+
+        do {
             draw(field, score);
+            copyCurrentFiledState(field, fieldBeforeMove);
+
+            if (checkWinTile(field) && !alreadyWin) {
+                System.out.printf(colorize("Got %d - DAMN, your good!%n", WIN_FORMAT), WIN_TILE);
+                System.out.println(colorize("Let's go! We need MORE SCORE!!!", WIN_FORMAT));
+                alreadyWin = true;
+            }
+
             direction = askDirection();
             score += move(field, direction, line);
-            addNewValue(field, freeCells);
 
-            if (score == WIN_SCORE) {
-                System.out.println(score + " - DAMN, your good!");
-                System.out.println("Let's go! We need MORE SCORE!!!");
+            if (!compareFields(fieldBeforeMove, field)) {
+                addNewValue(field, freeCells);
+            }
+        } while (canMove(field));
+
+        draw(field, score);
+        System.out.println(colorize("game over...", ERROR_FORMAT));
+    }
+
+    /**
+     *
+     * @param field - given two dimensional array (play-board).
+     * @return <code>true</code> if we found <code>WIN_TILE</code>
+     */
+    private static boolean checkWinTile(int[][] field) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if(field[i][j] == WIN_TILE) {
+                    return true;
+                }
             }
         }
-        //TODO Call draw() here, it's necessary?
-        //mb do while
-        draw(field, score); // last draw?
-        return true; // means game over
+        return false;
     }
 
     private static Direction askDirection() {
@@ -109,13 +123,6 @@ public class Game {
                     System.out.println("invalid move, try again.");
             }
         }
-    }
-
-    private static int[][] generateField(int size, int[][] freeCells) {
-        int[][] field = new int[size][size];
-        addNewValue(field, freeCells);
-        addNewValue(field, freeCells);
-        return field;
     }
 
     private static boolean canMove(int[][] field) {
@@ -160,8 +167,8 @@ public class Game {
     /**
      * Add new value on field if it's possible.
      *
-     * @param field
-     * @param freeCells
+     * @param field - given two dimensional array (play-board).
+     * @param freeCells - array for storage empty cells coordinates.
      */
     private static void addNewValue(int[][] field, int[][] freeCells) {
         clearArrayWithFreeCells(freeCells);
@@ -181,6 +188,31 @@ public class Game {
         }
     }
 
+    /**
+     * Move all zeroes to end of array.
+     *
+     * @param line - actually row or column from main play field.
+     */
+    private static void pushZerosToEnd(int[] line) {
+        int count = 0;  // Count of non-zero elements
+
+        for (int i = 0; i < line.length; i++) {
+            if (line[i] != EMPTY) {
+                line[count] = line[i];
+                count++;
+            }
+        }
+
+        while (count < line.length) {
+            line[count++] = 0;
+        }
+    }
+
+    /**
+     * Just fill two dimensional array by zeros.
+     *
+     * @param array assist array for calc empty cells
+     */
     private static void clearArrayWithFreeCells(int[][] array) {
         for (int i = 0; i < array.length; i++) {
             for (int j = 0; j < array[0].length; j++) {
@@ -189,83 +221,106 @@ public class Game {
         }
     }
 
+    /**
+     * Shift all rows or columns in the specified direction
+     *
+     * @param field - given two dimensional array (play-board).
+     * @param direction - direction move
+     * @param line - actually row or column from main play field.
+     * @return score - all sums after this move
+     */
     private static int move(int[][] field, Direction direction, int[] line) {
         int score = 0;
-
-        int k;
         for (int i = 0; i < SIZE; i++) {
+            int k = 0;
             for (int j = 0; j < SIZE; j++) {
-                k = 0;
                 switch (direction) {
                     case LEFT:
-                    case RIGHT:
-                        if(field[i][j] != EMPTY) {
+                        if (field[i][j] != EMPTY) {
                             line[k] = field[i][j];
                             k++;
                         }
                         break;
-                    case DOWN:
+                    case RIGHT:
+                        if (field[i][SIZE - (j + 1)] != EMPTY) {
+                            line[k] = field[i][SIZE - (j + 1)];
+                            k++;
+                        }
+                        break;
                     case UP:
-                        if(field[j][i] != EMPTY) {
+                        if (field[j][i] != EMPTY) {
                             line[k] = field[j][i];
                             k++;
                         }
+                        break;
+                    case DOWN:
+                        if (field[SIZE - (j + 1)][i] != EMPTY) {
+                            line[k] = field[SIZE - (j + 1)][i];
+                            k++;
+                        }
                 }
-                calculate(line, direction);
-//                for (int l = 0; l < SIZE; l++) {
-//                    field
-//                }
             }
+            score += calculate(line, direction);
+            for (int j = 0; j < SIZE; j++) {
+                switch (direction) {
+                    case LEFT:
+                    case RIGHT:
+                        field[i][j] = line[j];
+                        break;
+                    case UP:
+                    case DOWN:
+                        field[j][i] = line[j];
+                }
+            }
+            Arrays.fill(line, 0);
+        }
+        return score;
+    }
+
+    private static int calculate(int[] line, Direction direction) {
+        int score = 0;
+        score += sumAllPairs(line);
+        pushZerosToEnd(line);
+
+        if (direction == Direction.RIGHT || direction == Direction.DOWN) {
+            reverseLine(line);
         }
 
         return score;
     }
 
-    private static void calculate(int[] line, Direction direction) {
-
-        switch (direction) {
-            case RIGHT:
-            case DOWN:
-                reverseLine(line);
-        }
-
+    private static int sumAllPairs(int[] line) {
+        int score = 0;
         int prev = line[0]; // get first value
 
-        if(prev == 0) {
-            return;
+        if (prev == EMPTY) { // means empty line;
+            return score;
         }
 
         for (int i = 1; i < line.length; i++) {
-            if (line[i] == 0) {
-                break;
-            }
-            if (prev == 0) {
-                line[i - 1] = line[i];
-                line[i] = 0;
-            }
-            if (prev == line[i] && prev != 0) {
+            if (line[i] == prev && line[i] != EMPTY) {
                 line[i - 1] *= 2;
-                line[i] = 0;
+                score += line[i - 1];
+                line[i] = EMPTY;
             }
             prev = line[i];
         }
-
-        switch (direction) {
-            case RIGHT:
-            case DOWN:
-                reverseLine(line);
-        }
+        return score;
     }
 
-
     private static void draw(int[][] field, int score) {
-        System.out.printf("Score: %4d%n%n", score);
+        Attribute[] color;
+        System.out.printf("Score: %4d%n", score);
 
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                System.out.printf("  %4d", field[i][j]);
+                color = (j + i) % 2 == 0 ? FIRST_FORMAT : SECOND_FORMAT;
+                if (field[i][j] != EMPTY) {
+                    System.out.printf(colorize("%4d ", color), field[i][j]);
+                } else {
+                    System.out.print(colorize("     ", color));
+                }
             }
-            System.out.println();
             System.out.println();
         }
     }
@@ -284,8 +339,22 @@ public class Game {
             line[line.length - i - 1] = temp;
         }
     }
+
+    private static boolean compareFields(int[][] a, int[][] b) {
+        for (int i = 0; i < SIZE; i++) {
+            if (!Arrays.equals(a[i], b[i]))
+                return false;
+        }
+        return true;
+    }
+
+    private static void copyCurrentFiledState(int[][] field, int[][] fieldBeforeMove) {
+        for (int i = 0; i < SIZE; i++) {
+            System.arraycopy(field[i], 0, fieldBeforeMove[i], 0, SIZE);
+        }
+    }
 }
 
 enum Direction {
-    RIGHT, LEFT, UP, DOWN;
+    RIGHT, LEFT, UP, DOWN
 }
