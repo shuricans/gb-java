@@ -10,8 +10,10 @@ import static com.diogonunes.jcolor.Ansi.colorize;
 import static com.diogonunes.jcolor.Attribute.*;
 
 /**
- * 2048 (4 x 4)
- * https://play2048.co/
+ * Simple console version of the game "2048".
+ * Original game:
+ * Created by <a href="http://gabrielecirulli.com/">Gabriele Cirulli</a>
+ * See <a href="https://play2048.co">2048</a>
  * <p>
  * 1. В каждом раунде появляется плитка номинала «2» (с вероятностью 90 %) или «4» (с вероятностью 10 %)
  * <p>
@@ -55,7 +57,7 @@ public class Game {
     public static void play() {
 
         final int[][] freeCells = new int[2][SIZE * SIZE]; // assist array for calc empty cells
-        final int[][] field = new int[SIZE][SIZE]; // main field, play-board
+        final int[][] field = new int[SIZE][SIZE]; // main field - play-board
         // on start, add two values on field
         addNewValue(field, freeCells);
         addNewValue(field, freeCells);
@@ -71,9 +73,9 @@ public class Game {
 
         do {
             draw(field, score);
-            copyCurrentFiledState(field, fieldBeforeMove);
+            copyCurrentFieldState(field, fieldBeforeMove);
 
-            if (checkWinTile(field) && !alreadyWin) {
+            if (!alreadyWin && checkWinTile(field)) {
                 System.out.printf(colorize("Got %d - DAMN, your good!%n", WIN_FORMAT), WIN_TILE);
                 System.out.println(colorize("Let's go! We need MORE SCORE!!!", WIN_FORMAT));
                 alreadyWin = true;
@@ -92,14 +94,15 @@ public class Game {
     }
 
     /**
+     * Searching the tile with winner value.
      *
-     * @param field - given two dimensional array (play-board).
-     * @return <code>true</code> if we found <code>WIN_TILE</code>
+     * @param field - given two-dimensional array (play-board).
+     * @return {@code true} if we found winner tile.
      */
     private static boolean checkWinTile(int[][] field) {
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                if(field[i][j] == WIN_TILE) {
+                if (field[i][j] == WIN_TILE) {
                     return true;
                 }
             }
@@ -107,6 +110,13 @@ public class Game {
         return false;
     }
 
+    /**
+     * Asking next shift direction.
+     * Waiting input from player.
+     * WASD
+     *
+     * @return direction value.
+     */
     private static Direction askDirection() {
         while (true) {
             System.out.print("WASD: ");
@@ -120,11 +130,17 @@ public class Game {
                 case "D":
                     return Direction.RIGHT;
                 default:
-                    System.out.println("invalid move, try again.");
+                    System.out.println(colorize("invalid move, try again.", ERROR_FORMAT));
             }
         }
     }
 
+    /**
+     * Check available moves.
+     *
+     * @param field - given two-dimensional array (play-board).
+     * @return {@code true} if we can move.
+     */
     private static boolean canMove(int[][] field) {
 
         // if we found empty cell, we can move
@@ -165,9 +181,9 @@ public class Game {
     }
 
     /**
-     * Add new value on field if it's possible.
+     * If possible, add a new value to an empty cell in the field.
      *
-     * @param field - given two dimensional array (play-board).
+     * @param field     - given two-dimensional array (play-board).
      * @param freeCells - array for storage empty cells coordinates.
      */
     private static void addNewValue(int[][] field, int[][] freeCells) {
@@ -189,7 +205,7 @@ public class Game {
     }
 
     /**
-     * Move all zeroes to end of array.
+     * Moving all zeroes to end of array.
      *
      * @param line - actually row or column from main play field.
      */
@@ -209,7 +225,7 @@ public class Game {
     }
 
     /**
-     * Just fill two dimensional array by zeros.
+     * Clearing (just filling two-dimensional array by zeros).
      *
      * @param array assist array for calc empty cells
      */
@@ -222,12 +238,12 @@ public class Game {
     }
 
     /**
-     * Shift all rows or columns in the specified direction
+     * Shifting all rows or columns in the specified direction.
      *
-     * @param field - given two dimensional array (play-board).
-     * @param direction - direction move
-     * @param line - actually row or column from main play field.
-     * @return score - all sums after this move
+     * @param field     - given two-dimensional array (play-board).
+     * @param direction - direction move.
+     * @param line      - actually row or column from main play field.
+     * @return score - all sums after this move.
      */
     private static int move(int[][] field, Direction direction, int[] line) {
         int score = 0;
@@ -277,6 +293,13 @@ public class Game {
         return score;
     }
 
+    /**
+     * Shifting a given line in the specified direction.
+     *
+     * @param line      - actually row or column from main play field.
+     * @param direction - direction move.
+     * @return sum of this shifting.
+     */
     private static int calculate(int[] line, Direction direction) {
         int score = 0;
         score += sumAllPairs(line);
@@ -289,6 +312,14 @@ public class Game {
         return score;
     }
 
+    /**
+     * Calculating common sum of all pairs.
+     * 1. {2, 2, 4, 4} > 12 = 4 + 8.
+     * 2. {0, 2, 2, 2} > 4 = 2 + 2.
+     *
+     * @param line - actually row or column from main play field.
+     * @return sum of all pairs.
+     */
     private static int sumAllPairs(int[] line) {
         int score = 0;
         int prev = line[0]; // get first value
@@ -308,6 +339,12 @@ public class Game {
         return score;
     }
 
+    /**
+     * Printing the field and current score.
+     *
+     * @param field - a two-dimensional array (play-board).
+     * @param score - current score.
+     */
     private static void draw(int[][] field, int score) {
         Attribute[] color;
         System.out.printf("Score: %4d%n", score);
@@ -332,23 +369,40 @@ public class Game {
         return ThreadLocalRandom.current().nextInt(10) > 0 ? 2 : 4;
     }
 
+    /**
+     * Reverse given array.
+     *
+     * @param line - actually row or column from main play field.
+     */
     private static void reverseLine(int[] line) {
         for (int i = 0; i < line.length / 2; i++) {
-            int temp = line[i];
-            line[i] = line[line.length - i - 1];
-            line[line.length - i - 1] = temp;
+            line[i] += line[line.length - i - 1];
+            line[line.length - i - 1] = line[i] - line[line.length - i - 1];
+            line[i] = line[i] - line[line.length - i - 1];
         }
     }
 
-    private static boolean compareFields(int[][] a, int[][] b) {
+    /**
+     * Comparing two arrays (current field and his previous state).
+     *
+     * @param field           - a two-dimensional array (play-board).
+     * @param fieldBeforeMove - a two-dimensional array, a copy previous field state.
+     * @return {@code true} if fields the same.
+     */
+    private static boolean compareFields(int[][] field, int[][] fieldBeforeMove) {
         for (int i = 0; i < SIZE; i++) {
-            if (!Arrays.equals(a[i], b[i]))
-                return false;
+            if (!Arrays.equals(field[i], fieldBeforeMove[i])) return false;
         }
         return true;
     }
 
-    private static void copyCurrentFiledState(int[][] field, int[][] fieldBeforeMove) {
+    /**
+     * Copy of the current state of the field.
+     *
+     * @param field           - given two-dimensional array (play-board).
+     * @param fieldBeforeMove - a two-dimensional array, for a copy.
+     */
+    private static void copyCurrentFieldState(int[][] field, int[][] fieldBeforeMove) {
         for (int i = 0; i < SIZE; i++) {
             System.arraycopy(field[i], 0, fieldBeforeMove[i], 0, SIZE);
         }
