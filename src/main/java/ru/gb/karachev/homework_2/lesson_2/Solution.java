@@ -41,23 +41,17 @@ public class Solution {
      */
     public static int getSum(String[][] numbers) throws MyArraySizeException, MyArrayDataException {
 
-        boolean invalidSize = false;
         int size = 4;
-        if (numbers.length == size) {
-            for (int i = 0; i < size; i++) {
-                if (numbers[i].length != size) {
-                    invalidSize = true;
-                    break;
-                }
-            }
-        } else {
-            invalidSize = true;
-        }
 
-        if (invalidSize) {
+        if (numbers.length != size) {
             throw new MyArraySizeException(size);
         }
 
+        for (int i = 0; i < size; i++) {
+            if (numbers[i].length != size) {
+                throw new MyArraySizeException(size);
+            }
+        }
 
         int sum = 0;
         for (int i = 0; i < size; i++) {
