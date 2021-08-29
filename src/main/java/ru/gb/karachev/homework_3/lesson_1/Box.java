@@ -1,7 +1,6 @@
 package ru.gb.karachev.homework_3.lesson_1;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Box<T extends Fruit> {
@@ -12,18 +11,18 @@ public class Box<T extends Fruit> {
         fruits = new ArrayList<>();
     }
 
-    public Box(List<T> fruits) {
-        this.fruits = new ArrayList<>(fruits);
-    }
-
-    @SafeVarargs
-    public Box(T... fruits) {
-        this.fruits = new ArrayList<>();
-        Collections.addAll(this.fruits, fruits);
-    }
-
     public boolean add(T fruit) {
-        return fruits.add(fruit);
+        if (fruits.size() == 0) {
+            return fruits.add(fruit);
+        }
+        if (fruits.get(0).getClass().equals(fruit.getClass())) {
+            return fruits.add(fruit);
+        } else {
+            throw new IllegalArgumentException("The box can only contain objects class "
+                    + fruits.get(0).getClass().getSimpleName()
+                    + ". You are trying add " + fruit.getClass().getSimpleName()
+            );
+        }
     }
 
     public float getWeight() {
@@ -33,13 +32,15 @@ public class Box<T extends Fruit> {
         return fruits.size() * fruits.get(0).getWeight();
     }
 
-    public boolean compare(Box<?> box) {
+    public boolean compare(Box<? extends Fruit> box) {
         return this.getWeight() == box.getWeight();
     }
 
     public void transfer(Box<T> box) {
+        if (this.fruits.isEmpty()) {
+            return;
+        }
         box.fruits.addAll(this.fruits);
         this.fruits.clear();
     }
-
 }
