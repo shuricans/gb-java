@@ -1,5 +1,7 @@
 package ru.gb.karachev.homework_3.lesson_6;
 
+import java.util.Arrays;
+
 public class Solution {
 
     /**
@@ -32,5 +34,13 @@ public class Solution {
         return result;
     }
 
-
+    /**
+     * Checks if the array {@code a} contains at least the number 1 or 4
+     *
+     * @param a one-dimensional array of integers.
+     * @return {@code true} if we found numbers 1 or 4.
+     */
+    public boolean isContainsNumbersOneOrFour(int[] a) {
+        return Arrays.stream(a).anyMatch(x -> x == 1 || x == 4);
+    }
 }
