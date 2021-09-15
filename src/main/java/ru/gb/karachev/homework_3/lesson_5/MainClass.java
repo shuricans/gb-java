@@ -22,7 +22,6 @@ public class MainClass {
         try {
             BARRIER.await(); // main thread waiting, when all cars will be ready
             System.out.println("ВАЖНОЕ ОБЪЯВЛЕНИЕ >>> Гонка началась!!!");
-            BARRIER.reset(); // reset barrier when race has started
             BARRIER.await(); // main thread waiting end race
             System.out.println("ВАЖНОЕ ОБЪЯВЛЕНИЕ >>> Гонка закончилась!!!");
         } catch (InterruptedException | BrokenBarrierException e) {
